@@ -1,0 +1,362 @@
+<head>
+    <link rel="shortcut icon" href="">
+</head>
+<div class="split left">
+    <div class="centered">
+        <button type="button" onclick="startRecord()">Speech to text</button>
+        <p id="SpeechText" />
+    </div>
+</div>
+<div class="split right">
+    <div class="centered">
+        <textarea id="textToSpeech" name="w3review" rows="4" cols="50">
+          Enter the text here
+</textarea>
+        <button type="button" onclick="textToSpeech()">Text to Speech</button>
+        <!--      <audio controls>-->
+        <!--  <source src="horse.ogg" type="audio/ogg">-->
+        <!--  <source src="horse.mp3" type="audio/mpeg">-->
+        <!--Your browser does not support the audio element.-->
+        <!--</audio>-->
+    </div>
+</div>
+<style>
+/* Split the screen in half */
+.split {
+    height: 100%;
+    width: 50%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    overflow-x: hidden;
+    padding-top: 20px;
+}
+
+/* Control the left side */
+.left {
+    left: 0;
+    < !-- background-color: #111;
+    -->
+}
+
+/* Control the right side */
+.right {
+    right: 0;
+    < !-- background-color: red;
+    -->
+}
+
+/* If you want the content centered horizontally and vertically */
+.centered {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+</style>
+<script src="rest/js/vad.js"></script>
+<script src="https://cdn.rawgit.com/mattdiamond/Recorderjs/08e7abd9/dist/recorder.js"></script>
+<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+<script>
+/* eslint-disable no-unused-vars */
+/* Helpers */
+
+
+textToSpeech = function() {
+
+
+
+        text = document.getElementById("textToSpeech").value
+
+
+        sendMessageToBotSocket(text, false)
+        return
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                // Typical action to be performed when the document is ready:
+                txt = xhttp.responseText
+                document.getElementById("SpeechText").textContent = txt
+                console.log(txt)
+            }
+        };
+        <!--xhttp.open("POST", "http://192.168.6.224:1070/SpeechToText", true);-->
+        xhttp.open("POST", "TextToSpeech", true);
+        xhttp.send(JSON.stringify({ "message": text }));
+
+
+    },
+    startRecord = function() {
+        const vm = this;
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.audioContext = new AudioContext({ sampleRate: 16000 });
+        this.isRecording = true;
+        // Ask for audio device
+        // navigator.getUserMedia = navigator.getUserMedia
+        //	|| navigator.mozGetUserMedia
+        //	|| navigator.webkitGetUserMedia;
+        // navigator.getUserMedia({ audio: true }, vm.startUserMedia, e => {
+        //	console.log(`No live audio input in this browser: ${e}`);
+        //});
+        // FYI: by default works only over https
+        // FYI: Chrome on android doesn't get access to getUserMedia if connection isn't encrypted
+        // FYI: either use https or manually use Experiments: 'Insecure origins treated as secure' in Chrome
+        navigator.getUserMedia = (
+            navigator.getUserMedia ||
+            navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia ||
+            navigator.msGetUserMedia
+        );
+        // for old browser version - using deprecated navigator.getUserMedia
+        if (typeof navigator.mediaDevices === 'undefined') {
+            navigator.getUserMedia({
+                audio: true
+            }, vm.startUserMedia, e => {
+                console.log(`No live audio input in this browser: ${e}`);
+            });
+            // for new browser version - using new navigator.mediaDevices.getUserMedia
+        } else {
+            navigator.mediaDevices.getUserMedia({
+                audio: true
+            }).then(vm.startUserMedia).catch(e => {
+                console.log(`No live audio input in this browser: ${e}`);
+            });
+        }
+    },
+    stopRecording = function() {
+        this.isRecording = false;
+        this.audioContext.close().then(() => {
+            console.log('streaming close');
+        });
+    },
+    startUserMedia = function(stream) {
+        const vm = this;
+        vm.analyser = vm.audioContext.createAnalyser();
+        const source = vm.audioContext.createMediaStreamSource(stream).connect(vm.analyser);
+        console.log(vm.analyser);
+        vm.dataArray = new Uint8Array(vm.analyser.fftSize / 32);
+        // vm.animate();
+        const chunks = [];
+        const audioOptions = {
+            audioBitsPerSecond: 16000
+        };
+        /*         This two lines using Mediarecorder            */
+        // vm.mediaRecorder = new MediaRecorder(stream, audioOptions);
+        // vm.mediaRecorder.start();
+        vm.mediaRecorder = new Recorder(source, { numChannels: 1 });
+        vm.mediaRecorder.record();
+        window.setTimeout(() => {
+            if (vm.mediaRecorder.state === 'recording') {
+                vm.mediaRecorder.stop();
+                console.log('10 seconds, stop recording');
+            }
+        }, 10000);
+        // Setup options
+        const options = {
+            source: source,
+            voice_stop: function() {
+                /*         This line using Mediarecorder            */
+                // if (vm.mediaRecorder.state === 'recording') {
+                if (vm.isRecording) {
+                    vm.mediaRecorder.stop();
+                    vm.mediaRecorder.exportWAV(vm.createFileLink);
+                    vm.stopRecording();
+                    console.log('voice_stop');
+                }
+            },
+            voice_start: function() {
+                if (vm.isRecording) {
+                    console.log('voice_start');
+                    // } else if (!vm.isRecording && (this.incomeMessage.length === 0)) {
+                    // 	console.log('StartRecording');
+                    // 	vm.startRecord();
+                }
+            }
+        };
+        // Create VAD
+        // eslint-disable-next-line no-undef
+        const vad = new VAD(options);
+
+        /*              BELOW ARE USING MEDIARECORDER             */
+        // Store sound in datas
+        // this.mediaRecorder.ondataavailable = function(e) {
+        // 	chunks.push(e.data);
+        // };
+
+        // this.mediaRecorder.onstop = function(e) {
+        // 	console.log('recorder stopped');
+        // 	vm.$store.commit('setResponseStatus', true);
+        // 	this.waitForRespose = true;
+        // 	const blob = new Blob(chunks, { type: 'audio/ogg;codecs=0' });
+        // 	chunks = [];
+        // 	const audioURL = window.URL.createObjectURL(blob);
+
+        // 	const request = new XMLHttpRequest();
+        // 	request.open('GET', audioURL, true);
+        // 	request.responseType = 'blob';
+        // 	request.onload = function() {
+        // 		const reader = new FileReader();
+        // 		reader.readAsDataURL(request.response);
+        // 		reader.onload = function(el) {
+        // 			console.log('DataURL:', el.target.result);
+        // 			vm.sendMessageToBot(el.target.result);
+        // 		};
+        // 	};
+        // 	request.send();
+        // };
+    },
+    createFileLink = function(blob) {
+        const vm = this;
+        console.log('recorder stopped');
+        // vm.$store.commit('setResponseStatus', true);
+        this.waitForRespose = true;
+        const audioURL = window.URL.createObjectURL(blob);
+
+        const request = new XMLHttpRequest();
+        request.open('GET', audioURL, true);
+        request.responseType = 'blob';
+        request.onload = function() {
+            const reader = new FileReader();
+            reader.readAsDataURL(request.response);
+            reader.onload = function(el) {
+                // console.log('DataURL:', el.target.result);
+                console.log('SEND RESULT TO THE BOT');
+                vm.sendMessageToBotSocket(el.target.result);
+                // vm.sendMessageToBot(el.target.result);
+            };
+        };
+        request.send();
+    },
+    playMedia = function(audioPath) {
+        const audio = document.querySelector('.sound-clips');
+        audio.setAttribute('controls', '');
+        audio.setAttribute('autoplay', '');
+        audio.src = audioPath;
+    },
+
+    sendMessageToBotSocket = function(text, isVoice=true){
+	this.socket.emit("uservoice_uttered", {
+        "message": text,
+        "isSpeech": isVoice,
+        session_id: this.UserId
+    	})
+    },
+
+    sendMessageToBot = function(text) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                // Typical action to be performed when the document is ready:
+                txt = xhttp.responseText
+                document.getElementById("SpeechText").textContent = txt
+                console.log(txt)
+            }
+        };
+        <!--xhttp.open("POST", "http://192.168.6.224:1070/SpeechToText", true);-->
+        xhttp.open("POST", "SpeechToText", true);
+        xhttp.send(JSON.stringify({ "blobData": text }));
+
+    },
+
+
+
+
+    sendServer = function(text) {
+        /* Send message to the bot if it isn't empty */
+        if (text && text.length >= 1 && text.replace(/\s/g, '').length !== 0) {
+            /* Append to array of messages (so that it gets rendered to the screen) */
+            console.log('type:', typeof(text));
+            // console.log('text:', text);
+            this.$store.commit('emptyIncomingMessage');
+            this.$store.commit('addOutgoingMessage', { text: this.currentInput });
+            this.$socket.emit('user_uttered', { message: text, room: this.userId });
+        } else if (typeof(text) === 'object') {
+            console.log('type:', typeof(text));
+            this.$store.commit('emptyIncomingMessage');
+            // this.$store.commit('addOutgoingMessage', { text: this.currentInput });
+            this.$socket.emit('user_uttered', { message: text, room: this.userId });
+        }
+    },
+    animate = function() {
+        this.ctx.globalAlpha = 0.5;
+        if (this.countFrame > 90) {
+            this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+            this.countFrame = 0;
+        }
+        this.analyser.getByteFrequencyData(this.dataArray);
+        this.ctx.strokeStyle = '#fff';
+        // this.ctx.lineWidth = 0.5;
+        this.ctx.beginPath();
+        this.ctx.moveTo(-2, this.canvasHeight / 2);
+        const arrayLength = this.dataArray.length;
+        const countStep = this.canvasWidth / arrayLength;
+
+        for (let i = 1; i < arrayLength - 2; i += 1) {
+            const points = [];
+            points[0] = {
+                x: i * countStep,
+                y: (this.canvasHeight - this.dataArray[i]) / 2
+            };
+            points[1] = {
+                x: (i + 1) * countStep,
+                y: (this.canvasHeight - this.dataArray[i + 1]) / 2
+            };
+            const xc = (points[0].x + points[1].x) / 2;
+            const yc = (points[0].y + points[1].y) / 2;
+            this.ctx.quadraticCurveTo(points[0].x, points[0].y, xc, yc);
+        }
+        this.ctx.stroke();
+        this.countFrame += 1;
+        window.requestAnimationFrame(this.animate);
+    }
+
+
+socket_handling = function() {
+    var socket = io.connect(window.location.host)
+    const srch = window.location.search;
+    const UserId = new URLSearchParams(srch).get("UserId");
+
+
+    socket.on('connect', () => {
+        // console.log("----------------------| local_id : " + local_id);
+        socket.emit('session_request', ({ 'session_id': UserId }));
+    });
+    socket.on('disconnect', () => {
+        // console.log("----------------------| local_id : " + local_id);
+        // socket.emit('session_cancel', ({ 'session_id': UserId }));
+    });
+
+    // When session_confirm is received from the server:
+    socket.on('session_confirm', (remote_id) => {
+        console.log('session id ' + remote_id);
+    });
+
+    // socket.emit("uservoice_uttered", {
+    //     "message": userText,
+    //     "customData": { "language": "en" },
+    //     "language": "en",
+    //     session_id: UserId
+    // })
+    socket.on('botvoice_uttered', function(message) {
+
+    if(typeof(message['link']) == "string"){
+    var audio = new Audio(message['link']);
+    audio.play();
+    }else{
+    document.getElementById("SpeechText").textContent = message['text']
+    }
+
+
+
+        console.log("reached to bot uttered")
+    });
+
+    this.socket = socket
+    this.UserId = UserId
+
+}
+
+socket_handling()
+</script>

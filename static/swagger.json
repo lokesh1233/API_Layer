@@ -1,0 +1,369 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Resume Builder",
+    "version": "1.0",
+    "title": "Resume Builder App"
+  },
+  "paths": {
+    "/generateTemplate": {
+      "post": {
+        "tags": [
+          "Generate Template"
+        ],
+        "summary": "Generate template with data",
+        "description": "Post data into Template",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Template",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "template_id": {
+                  "type": "string"
+                },
+                "employee_code": {
+                  "type": "string"
+                },
+                "resource_name": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "mobile_number": {
+                  "type": "string"
+                },
+                "key_project_highlights_label": {
+                  "type": "boolean"
+                },
+                "employment_history": {
+                  "type": "object",
+                  "properties": {
+                    "company_name": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "professional_experience": {
+                  "type": "object",
+                  "properties": {
+                    "client_name": {
+                      "type": "string"
+                    },
+                    "clien_location": {
+                      "type": "string"
+                    },
+                    "duration": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "project_role": {
+                      "type": "string"
+                    },
+                    "project_skill": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "key_project_highlights": {
+                  "type": "object",
+                  "properties": {
+                    "key_point": {
+                      "type": "string"
+                    },
+                    "key_point_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "core_competencies": {
+                  "type": "object",
+                  "properties": {
+                    "skills": {
+                      "type": "string"
+                    },
+                    "domain": {
+                      "type": "string"
+                    },
+                    "certification_label": {
+                      "type": "boolean"
+                    },
+                    "certifications": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "education": {
+                  "type": "object"
+                },
+                "summary": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Generated Template Successfully"
+          }
+        }
+      }
+    },
+    "/resumeTemplate/{employee_code}/{fileType}": {
+      "get": {
+        "tags": [
+          "Reesume Tempalate"
+        ],
+        "description": "Get Resume Template of specific employee",
+        "parameters": [
+          {
+            "name": "employee_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileType",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved Resume Template Successfully",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    },
+    "/uploadTemplate": {
+      "post": {
+        "tags": [
+          "Upload Template"
+        ],
+        "description": "Post a new template",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "template",
+            "type": "file",
+            "required": true,
+            "description": "Upload a file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uploaded file sucessfully"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Upload Template"
+        ],
+        "description": "Get a Template",
+        "responses": {
+          "200": {
+            "description": "Retrieved Uploaded Template successfully"
+          }
+        }
+      }
+    },
+    "/templateList": {
+      "get": {
+        "tags": [
+          "Template List"
+        ],
+        "description": "Retrieve list of templates successfully",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/generateTemplateWithData": {
+      "post": {
+        "tags": [
+          "Generate Template with Data"
+        ],
+        "description": "Generate template with data",
+        "consumes":["multipart/form-data"],
+        "parameters": [
+          {
+            "name": "data",
+            "in": "formData",
+            "description": "Post data into template",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "template_id": {
+                  "type": "string"
+                },
+                "employee_code": {
+                  "type": "string"
+                },
+                "resource_name": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "mobile_number": {
+                  "type": "string"
+                },
+                "key_project_highlights_label": {
+                  "type": "boolean"
+                },
+                "employment_history": {
+                  "type": "object",
+                  "properties": {
+                    "company_name": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "professional_experience": {
+                  "type": "object",
+                  "properties": {
+                    "client_name": {
+                      "type": "string"
+                    },
+                    "clien_location": {
+                      "type": "string"
+                    },
+                    "duration": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "project_role": {
+                      "type": "string"
+                    },
+                    "project_skill": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "key_project_highlights": {
+                  "type": "object",
+                  "properties": {
+                    "key_point": {
+                      "type": "string"
+                    },
+                    "key_point_description": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "core_competencies": {
+                  "type": "object",
+                  "properties": {
+                    "skills": {
+                      "type": "string"
+                    },
+                    "domain": {
+                      "type": "string"
+                    },
+                    "certification_label": {
+                      "type": "boolean"
+                    },
+                    "certifications": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "education": {
+                  "type": "object"
+                },
+                "summary": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "in": "formData",
+            "name": "template",
+            "type": "file",
+            "required": true,
+            "description": "Upload a file"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Generated Template with Data Successfully"
+          }
+        }
+      }
+    },
+    "/downloadTemplate/{template_code}": {
+      "get": {
+        "tags": [
+          "Download Template"
+        ],
+        "produces": [
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ],
+        "parameters": [
+          {
+            "name": "template_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200":{
+            "description": "Downloaded Template Successfully",
+            "schema": {
+              "type": "file"
+            }
+          }
+        }
+      }
+    }
+  }}
